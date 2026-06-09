@@ -1,0 +1,55 @@
+# ── Normalización de fin de línea ──────────────────────────────────
+# Todo archivo de texto usa LF. Git se encarga de la conversión
+# automática al hacer checkout en Windows.
+* text=auto
+
+# ── Código fuente: siempre LF ─────────────────────────────────────
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.cjs     text eol=lf
+*.css     text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.mdx     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.txt     text eol=lf
+*.env*    text eol=lf
+*.svg     text eol=lf
+
+# ── Configuración de proyecto ──────────────────────────────────────
+.gitattributes  text eol=lf
+.gitignore       text eol=lf
+.editorconfig    text eol=lf
+
+# ── Shell scripts: siempre LF (no funcionan con CRLF) ─────────────
+*.sh      text eol=lf
+
+# ── Lockfiles: tratados como texto, diff simplificado ─────────────
+pnpm-lock.yaml  text eol=lf -diff
+
+# ── Binarios (sin conversión de fin de línea) ─────────────────────
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.ttf     binary
+*.woff    binary
+*.woff2   binary
+*.eot     binary
+*.otf     binary
+
+# ── Base de datos SQLite: binario ─────────────────────────────────
+*.db          binary
+*.db-journal  binary
+*.db-wal      binary
+
+# ── Archivos comprimidos / builds ──────────────────────────────────
+*.zip     binary
+*.tar.gz  binary
+*.gz      binary
