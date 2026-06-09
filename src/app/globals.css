@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Consultor SEO & Marketing Digital - Paleta Corporativa */
+:root {
+  --color-navy: #1e293b;
+  --color-slate: #334155;
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --color-red: #ef4444;
+}
+
+/* Base styles */
+body {
+  background-color: #f8fafc;
+  color: var(--color-slate);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+}
