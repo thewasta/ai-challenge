@@ -1,0 +1,25 @@
+# OpenSpec SDD Configuration
+# Project: Consultor SEO & Marketing Digital - MVP Multi-Agente
+
+schema: 1
+project: vml-ai-challenge
+
+# SDD session preferences (set via preflight)
+execution_mode: interactive
+artifact_store: openspec
+chained_pr_strategy: single-pr-default
+review_budget_lines: 1300
+
+# Testing (TBD)
+strict_tdd: false
+# test_command: "pnpm test"
+
+# Artifact paths
+artifacts:
+  proposals: openspec/proposals
+  specs: openspec/specs
+  designs: openspec/designs
+  tasks: openspec/tasks
+  apply_progress: openspec/apply-progress
+  verify_reports: openspec/verify-reports
+  sync_reports: openspec/sync-reports
