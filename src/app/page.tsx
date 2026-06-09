@@ -1,17 +1,13 @@
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { HomePageClient } from "@/components/HomePageClient";
+import { getLatestProjectWithChat } from "@/lib/db-helpers";
 
-export default function HomePage() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-4xl font-bold text-primary">Consultor SEO & Marketing Digital</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Plataforma de consultoría multi-agente impulsada por IA
-      </p>
-      <Button
-        size="lg"
-        className="mt-8"
-        render={<a href="/projects/new">Crear nuevo proyecto</a>}
-      />
-    </main>
-  );
+export default async function HomePage() {
+  const result = await getLatestProjectWithChat();
+
+  if (result?.chat) {
+    redirect(`/projects/${result.project.id}/chats/${result.chat.id}`);
+  }
+
+  return <HomePageClient />;
 }
