@@ -1,0 +1,77 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                   AUDITORÍA WCAG 2.2 AA — QUICK REFERENCE                      ║
+║              Consultor SEO & Marketing Digital — 2026-06-10                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📊 SCORECARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Puntuación:      58/100 (POR DEBAJO DEL ESTÁNDAR — necesita 80+)
+   Total Issues:    16 (5 críticos, 6 serios, 5 moderados)
+   Tiempo:          ~9-13 horas
+
+🚨 CRÍTICOS (5 issues — 2-3h) — BLOCKER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ P0-001 | 🎨 Icons sin aria-hidden="true" (10+ places)  | 5 min   | 1.1.1
+ P0-004 | ⏭️  Skip link falta                            | 10 min  | 2.4.1
+ P0-002 | ⌨️  Keyboard en CollapsibleTrigger            | 30 min  | 2.1.1
+ P0-005 | 📝 Inputs sin label — auditoría              | 45 min  | 4.1.2
+ P0-003 | 🔒 Focus trap en modals                       | 60 min  | 2.1.2
+
+⚠️  SERIOS (6 issues — 4-6h) — SHOULD DO ANTES DE LAUNCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ P1-001 | 🖼️  Markdown sin alt text validation          | 90 min  | 1.1.1
+ P1-002 | 📦 Contraste bajo en disabled states          | 45 min  | 1.4.11
+ P1-003 | 🔄 Tab order vs. visual order confuso         | 45 min  | 2.4.3
+ P1-004 | 👁️  Focus outline no visible                  | 30 min  | 2.4.7
+ P1-005 | 🎞️ Auto-scroll + prefers-reduced-motion       | 30 min  | 2.2.3
+ P1-006 | 🎬 Animaciones ignoran motion preference      | 45 min  | 2.3.3
+ P1-007 | 📄 Title dinámico no implementado             | 60 min  | 2.4.2
+ P1-008 | 🚨 Error sin role="alert"                     | 15 min  | 4.1.3
+ P1-009 | 🏷️  ARIA en Collapsible incompleto            | 45 min  | 4.1.2
+
+💡 MODERADOS (5 issues — 3-4h) — NICE TO HAVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ P2-001 | ⭕ Focus outline con opacidad                  | 15 min  | 1.4.11
+ P2-002 | 🔴 Error solo por color                       | 15 min  | 1.4.1
+ P2-003 | 🎬 Multimedia (captions para reportes)        | 60 min  | 1.2.x
+ P2-004 | 📍 Target size < 24×24px                      | 30 min  | 2.5.8
+ P2-005 | 📜 Scroll auto obscurece focus                | 20 min  | 2.4.11
+ P2-006 | 🔗 Link activo sin aria-current="page"        | 10 min  | 1.3.1
+ P2-007 | 💬 Input sin hint text                        | 30 min  | 3.3.5
+ P2-008 | 🎨 Más icons sin aria-hidden                  | 10 min  | 1.1.1
+
+✅ CUMPLIMIENTOS (Lo que ESTÁ BIEN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ✓ lang="es" en <html>
+ ✓ HTML semántico (<main>, <header>, <nav>)
+ ✓ Botones nativos <button>
+ ✓ Inputs con <label> asociada
+ ✓ Paleta OKLCH con buen contraste base (7.1:1)
+ ✓ Dark mode implementado
+ ✓ shadcn components con ARIA built-in
+ ✓ Links de Next.js navegables con teclado
+
+🎯 ORDEN DE EJECUCIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. SPRINT 1: Críticos (P0-001 a P0-005)        ~2-3h    → BLOCKER
+ 2. SPRINT 2: Serios (P1-001 a P1-009)         ~4-6h    → BEFORE LAUNCH
+ 3. SPRINT 3: Moderados (P2-001 a P2-008)      ~3-4h    → POST-MVP OK
+
+📄 DOCUMENTOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📋 accessibility-audit-wcag-2.2.md    ← Auditoría COMPLETA (4000+ words)
+ 📋 RESUMEN_EJECUTIVO.md               ← Resumen 1-página + checklists
+ 📋 QUICK_REFERENCE.txt                ← Este archivo (visual)
+
+🚀 PRÓXIMO PASO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ → Pasar a SDD PROPOSAL phase
+ → Crear issues para cada Sprint
+ → Ejecutar Sprint 1 (Críticos) como blocker
+ → Testing manual: keyboard + screen reader (NVDA/VoiceOver)
+ → Lighthouse audit: target ≥ 85/100
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║  Estado: LISTO PARA PROPUESTA                                                  ║
+║  Auditoría: 2026-06-10                                                         ║
+╚════════════════════════════════════════════════════════════════════════════════╝
