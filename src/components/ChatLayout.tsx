@@ -32,7 +32,7 @@ export function ChatLayout({
           <Separator orientation="vertical" className="mr-2 h-4" />
           <span className="text-sm font-medium text-muted-foreground truncate">{projectName}</span>
         </header>
-        <ChatArea />
+        <ChatArea chatId={currentChatId} />
       </SidebarInset>
     </SidebarProvider>
   );

@@ -40,18 +40,14 @@ export const chats = sqliteTable("chats", {
 
 /**
  * Messages table: stores user, assistant, and tool interaction messages.
+ * messageData contains the complete UIMessage object serialized as JSON.
  */
 export const messages = sqliteTable("messages", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  id: text("id").primaryKey(),
   chatId: integer("chat_id")
     .notNull()
     .references(() => chats.id, { onDelete: "cascade" }),
-  role: text("role", { enum: ["user", "assistant", "tool"] })
-    .notNull()
-    .default("user"),
-  content: text("content").notNull().default(""),
-  toolName: text("tool_name"),
-  toolResult: text("tool_result"),
+  messageData: text("message_data").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
