@@ -1,6 +1,9 @@
 import type { UIMessage } from "ai";
 import { createAgentUIStreamResponse, createIdGenerator, type InferAgentUIMessage } from "ai";
-import { createOrchestratorAgent, dataforseoAgent, subAgent } from "@/agents/tools";
+import {
+  createOrchestratorAgent,
+  dataforseoAgent,
+} from "@/agents/tools";
 import { getChat, getMessagesByChat, saveMessage } from "@/lib/db-helpers";
 
 export const maxDuration = 60;
@@ -42,26 +45,6 @@ export async function POST(req: Request) {
     const result = await dataforseoAgent.stream({
       prompt:
         task || "Analiza la palabra clave más genérica del nicho y genera un plan SEO básico.",
-    });
-
-    return result.toUIMessageStreamResponse({
-      originalMessages: allMessages,
-      generateMessageId: generateId,
-      onFinish: async ({ messages: finalMessages }) => {
-        for (const msg of finalMessages) {
-          await saveMessage(chatId, msg);
-        }
-      },
-    });
-  }
-
-  const delegateMatch = /^\[delegate\]\s*/i.exec(lastUserText.trim());
-
-  if (delegateMatch) {
-    const task = lastUserText.trim().slice(delegateMatch[0].length);
-
-    const result = await subAgent.stream({
-      prompt: task || "Responde al saludo del usuario de manera amable.",
     });
 
     return result.toUIMessageStreamResponse({

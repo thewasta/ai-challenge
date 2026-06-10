@@ -2,7 +2,12 @@ import { openai } from "@ai-sdk/openai";
 import { ToolLoopAgent, tool } from "ai";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { DATAFORSEO_PROMPT, ORCHESTRATOR_PROMPT, SUB_AGENT_PROMPT } from "@/agents/prompts";
+import {
+  COPYWRITER_PROMPT,
+  DATAFORSEO_PROMPT,
+  ORCHESTRATOR_PROMPT,
+  SUB_AGENT_PROMPT,
+} from "@/agents/prompts";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { SKILLS } from "@/skills";
@@ -130,13 +135,6 @@ const generateCpc = (intent: SearchIntent) => {
   return Number.parseFloat(randomFloat(min, max).toFixed(2));
 };
 
-// ── Sub-agent: General-purpose ──
-export const subAgent = new ToolLoopAgent({
-  model: openai("gpt-4o-mini"),
-  instructions: SUB_AGENT_PROMPT,
-  tools: {},
-});
-
 // ── DataForSEO Tools ──
 export const getKeywordIdeasTool = tool({
   description:
@@ -257,6 +255,13 @@ export const dataforseoAgent = new ToolLoopAgent({
   },
 });
 
+// ── Sub-agent: Copywriter SEO ──
+export const copywriterAgent = new ToolLoopAgent({
+  model: openai("gpt-4o-mini"),
+  instructions: COPYWRITER_PROMPT,
+  tools: {},
+});
+
 // ── Tool: load_skill ──
 export const loadSkillTool = tool({
   description:
@@ -276,15 +281,24 @@ export const loadSkillTool = tool({
 // ── Tool: delegate_to_subagent ──
 export const delegateToSubagentTool = tool({
   description:
-    'Delegates a task to a sub-agent. Use target "general" for generic tasks or "dataforseo" for SEO keyword research, clustering, and planning.',
+    'Delegates a task to a sub-agent. Use target "general" for generic tasks, "dataforseo" for SEO keyword research, or "copywriter" for content writing.',
   inputSchema: z.object({
     target: z
-      .enum(["general", "dataforseo"])
-      .describe("Which sub-agent to delegate to: general or dataforseo"),
+      .enum(["dataforseo", "copywriter"])
+      .describe("Which sub-agent to delegate to: general, dataforseo, or copywriter"),
     task: z.string().describe("The task to delegate to the sub-agent"),
   }),
   execute: async ({ target, task }, { abortSignal }) => {
-    const agent = target === "dataforseo" ? dataforseoAgent : subAgent;
+    const agent =
+      target === "dataforseo"
+        ? dataforseoAgent
+        : target === "copywriter"
+          ? copywriterAgent
+          : null;
+          
+    if (!agent) {
+      return `Error: Invalid target "${target}". Valid targets are "dataforseo" and "copywriter".`;
+    }
 
     const result = await agent.generate({
       prompt: task,
