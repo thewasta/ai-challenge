@@ -1,7 +1,7 @@
 import type { UIMessage } from "ai";
 import { createAgentUIStreamResponse, createIdGenerator, type InferAgentUIMessage } from "ai";
-import { dataforseoAgent, orchestratorAgent, subAgent } from "@/agents/tools";
-import { getMessagesByChat, saveMessage } from "@/lib/db-helpers";
+import { createOrchestratorAgent, dataforseoAgent, subAgent } from "@/agents/tools";
+import { getChat, getMessagesByChat, saveMessage } from "@/lib/db-helpers";
 
 export const maxDuration = 60;
 
@@ -76,6 +76,14 @@ export async function POST(req: Request) {
   }
 
   // ── Normal orchestration path ──
+  const chat = await getChat(chatId);
+
+  if (!chat) {
+    return new Response("Chat not found", { status: 404 });
+  }
+
+  const orchestratorAgent = createOrchestratorAgent(chat.projectId);
+
   const typedMessages = allMessages as InferAgentUIMessage<typeof orchestratorAgent>[];
 
   return createAgentUIStreamResponse({

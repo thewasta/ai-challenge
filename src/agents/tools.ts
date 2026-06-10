@@ -1,7 +1,10 @@
 import { openai } from "@ai-sdk/openai";
 import { ToolLoopAgent, tool } from "ai";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { DATAFORSEO_PROMPT, ORCHESTRATOR_PROMPT, SUB_AGENT_PROMPT } from "@/agents/prompts";
+import { db } from "@/db";
+import { projects } from "@/db/schema";
 import { SKILLS } from "@/skills";
 
 type SearchIntent = "Informational" | "Navigational" | "Commercial" | "Transactional";
@@ -291,12 +294,71 @@ export const delegateToSubagentTool = tool({
   },
 });
 
-// ── Orchestrator Agent ──
-export const orchestratorAgent = new ToolLoopAgent({
-  model: openai("gpt-4o-mini"),
-  instructions: ORCHESTRATOR_PROMPT,
-  tools: {
-    load_skill: loadSkillTool,
-    delegate_to_subagent: delegateToSubagentTool,
-  },
-});
+// ── Tool: get_project_overview (request-scoped) ──
+function createGetProjectOverviewTool(projectId: number) {
+  return tool({
+    description:
+      "Gets the current project context including name, description, buyer persona, competitors, and brand context.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
+      });
+
+      if (!project) return "Error: Project not found.";
+
+      return JSON.stringify({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        buyerPersona: project.buyerPersona,
+        competitors: project.competitors,
+        brandContext: project.brandContext,
+      });
+    },
+  });
+}
+
+// ── Tool: set_project_overview (request-scoped) ──
+function createSetProjectOverviewTool(projectId: number) {
+  return tool({
+    description:
+      "Updates the project context. Only provided fields will be updated; omitted fields remain unchanged.",
+    inputSchema: z.object({
+      name: z.string().optional().describe("Project/brand name"),
+      description: z.string().optional().describe("Brief product or brand description"),
+      buyerPersona: z.string().optional().describe("Target buyer persona description"),
+      competitors: z.string().optional().describe("Main competitors list"),
+      brandContext: z.string().optional().describe("Additional brand context as a JSON string"),
+    }),
+    execute: async (input) => {
+      const updateData: Record<string, string> = {};
+
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.buyerPersona !== undefined) updateData.buyerPersona = input.buyerPersona;
+      if (input.competitors !== undefined) updateData.competitors = input.competitors;
+      if (input.brandContext !== undefined) updateData.brandContext = input.brandContext;
+
+      if (Object.keys(updateData).length === 0) return "No fields provided to update.";
+
+      await db.update(projects).set(updateData).where(eq(projects.id, projectId));
+
+      return "Project context updated successfully.";
+    },
+  });
+}
+
+// ── Orchestrator Agent (request-scoped factory) ──
+export function createOrchestratorAgent(projectId: number) {
+  return new ToolLoopAgent({
+    model: openai("gpt-4o-mini"),
+    instructions: ORCHESTRATOR_PROMPT,
+    tools: {
+      load_skill: loadSkillTool,
+      delegate_to_subagent: delegateToSubagentTool,
+      get_project_overview: createGetProjectOverviewTool(projectId),
+      set_project_overview: createSetProjectOverviewTool(projectId),
+    },
+  });
+}
