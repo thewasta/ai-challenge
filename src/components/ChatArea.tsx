@@ -87,26 +87,34 @@ export function ChatArea({ chatId }: ChatAreaProps) {
   // Auto-scroll to bottom when new messages arrive.
   // biome-ignore lint/correctness/useExhaustiveDependencies: must react to every message change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    bottomRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
   }, [messages]);
 
   if (isLoadingHistory) {
     return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <MessageSquare className="size-12 mb-4 stroke-1 text-muted-foreground" />
+      <div
+        className="flex h-full flex-col items-center justify-center"
+        id="main-content"
+        tabIndex={-1}
+      >
+        <MessageSquare aria-hidden="true" className="mb-4 size-12 stroke-1 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Cargando historial...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col" id="main-content" tabIndex={-1}>
       <AgentStatusBanner activity={deriveActivity(messages)} />
       <ScrollArea className="flex-1 min-h-0">
         <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <MessageSquare className="size-16 mb-4 stroke-1" />
+              <MessageSquare aria-hidden="true" className="mb-4 size-16 stroke-1" />
               <p className="text-lg font-medium">Escribe tu primer mensaje</p>
               <p className="text-sm mt-1">para comenzar la consultoría de SEO</p>
             </div>
@@ -127,13 +135,23 @@ export function ChatArea({ chatId }: ChatAreaProps) {
       </div>
 
       {loadError && (
-        <div className="px-4 py-2 text-sm text-destructive bg-destructive/10 text-center">
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="bg-destructive/10 px-4 py-2 text-center text-sm text-destructive"
+          role="status"
+        >
           {loadError}
         </div>
       )}
 
       {error && (
-        <div className="px-4 py-2 text-sm text-destructive bg-destructive/10 text-center">
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="bg-destructive/10 px-4 py-2 text-center text-sm text-destructive"
+          role="status"
+        >
           Ocurrió un error al comunicarse con el asistente.
         </div>
       )}

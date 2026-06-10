@@ -2,6 +2,7 @@
 
 import type { UIMessage } from "ai";
 import { Bot } from "lucide-react";
+import type { ComponentPropsWithoutRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -10,14 +11,24 @@ interface MessageBubbleProps {
   message: UIMessage;
 }
 
+function MarkdownImage({ alt, ...props }: ComponentPropsWithoutRef<"img">) {
+  const resolvedAlt = alt?.trim() ? alt : "Imagen generada por el asistente";
+
+  return <img alt={resolvedAlt} {...props} />;
+}
+
+const markdownComponents = {
+  img: MarkdownImage,
+};
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
     <div className={cn("flex gap-2", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
-        <div className="flex-shrink-0 size-8 rounded-full bg-primary flex items-center justify-center mt-1">
-          <Bot className="size-4 text-primary-foreground" />
+        <div className="mt-1 flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
+          <Bot aria-hidden="true" className="size-4 text-primary-foreground" />
         </div>
       )}
 
@@ -48,7 +59,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   [&_blockquote]:border-l-2 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic
                   [&_a]:text-primary [&_a]:underline"
               >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+                  {part.text}
+                </ReactMarkdown>
               </div>
             );
           }

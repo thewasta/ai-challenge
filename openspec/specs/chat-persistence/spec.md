@@ -42,6 +42,8 @@ The serialized message MUST preserve:
   - For tool-use parts: `{ type: string (format 'tool-{toolName}'), toolCallId: string, state: string, input: object, output?: object }`
   - All other fields present in the original `UIMessage`
 
+When messages containing markdown are stored and later retrieved, the complete markdown text (including image references) MUST be preserved unchanged. Alt text for images in markdown is NOT validated at the storage layer — validation and fallback alt text application occurs in the rendering layer (MessageBubble component).
+
 #### Scenario: UIMessage with tool parts is round-tripped without data loss
 
 - GIVEN a `UIMessage` with a tool-use part containing `toolCallId: 'call_abc123'`, `input: { domain: 'example.com' }`, `output: { score: 89, issues: [...]}`
@@ -52,6 +54,31 @@ The serialized message MUST preserve:
   - `input.domain` equals 'example.com'
   - `output.score` equals 89
   - All properties are present (no truncation or filtering)
+
+#### Scenario: Markdown with image alt text is stored and retrieved unchanged
+
+- GIVEN an AI response with markdown: `![Chart](chart.png "Sales Q2")`
+- WHEN the assistant message is stored in `message_data` via `saveMessage()`
+- THEN:
+  - Complete markdown text is stored unchanged: `![Chart](chart.png "Sales Q2")`
+  - No validation of image syntax or alt text happens at storage level
+  - When retrieved via `getMessagesByChat()`, markdown is intact
+  - MessageBubble's custom image renderer applies fallback alt text only if needed during render
+
+#### Scenario: Markdown without image alt text is stored and retrieves fallback on render
+
+- GIVEN an AI response with markdown: `![](chart.png)` (no alt text)
+- WHEN the message is stored in database
+- THEN:
+  - Markdown is stored as-is: `![](chart.png)` (no modification)
+  - No validation or alt text injection happens at storage level
+  - When MessageBubble renders the message (via ReactMarkdown + custom image component)
+  - MessageBubble applies fallback alt: `alt="Imagen generada por el asistente"`
+  - Screen reader user hears: "image, Imagen generada por el asistente"
+
+**WCAG 2.2 AA Accessibility Note** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+Storage layer does not validate or modify markdown content. Alt text fallback is a rendering concern, not a storage concern. This decoupling allows the rendering layer (MessageBubble) to flexibly apply accessible alt fallback without requiring database changes.
 
 ### Requirement: Save Message to Database (UPSERT)
 

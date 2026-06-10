@@ -9,9 +9,9 @@ export function AgentStatusBanner({ activity }: AgentStatusBannerProps) {
   if (!activity) return null;
 
   return (
-    <div className="px-4 py-1.5 text-xs text-muted-foreground bg-muted/50 border-b flex items-center gap-2">
+    <div className="flex items-center gap-2 border-b bg-muted/50 px-4 py-1.5 text-xs text-muted-foreground">
       <span
-        className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse"
+        className="inline-block size-2 rounded-full bg-emerald-500 motion-safe:animate-pulse motion-reduce:opacity-60"
         aria-hidden="true"
       />
       <span>{activity}</span>

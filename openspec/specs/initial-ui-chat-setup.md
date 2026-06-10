@@ -141,6 +141,19 @@ OPENAI_API_KEY=sk-...
 - Carga proyectos con chats desde DB (Drizzle query)
 - Renderiza `<AppSidebar projects={...} />` y `<ChatArea />`
 
+**WCAG 2.2 AA Accessibility Requirements** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+ChatLayout (parent of AppSidebar and ChatArea) MUST include a skip link as the first focusable element, positioned before the header. Skip link markup:
+```tsx
+<a
+  href="#main-content"
+  className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2"
+>
+  Saltar al contenido principal
+</a>
+```
+The skip link target `id="main-content"` is on the ChatArea wrapper.
+
 ---
 
 ## 3. Componentes
@@ -184,12 +197,12 @@ interface AppSidebarProps {
         <SidebarGroup key={project.id}>
           <Collapsible defaultOpen={project.id === currentProjectId}>
             <SidebarGroupLabel asChild>
-              <CollapsibleTrigger>
-                <FolderIcon /> {project.name}
-                <ChevronDownIcon className="ml-auto" />
+              <CollapsibleTrigger aria-controls={`project-${project.id}-chats`}>
+                <FolderIcon aria-hidden="true" /> {project.name}
+                <ChevronDownIcon className="ml-auto" aria-hidden="true" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
-            <CollapsibleContent>
+            <CollapsibleContent id={`project-${project.id}-chats`}>
               <SidebarMenu>
                 {project.chats.map(chat => (
                   <SidebarMenuItem key={chat.id}>
@@ -197,8 +210,11 @@ interface AppSidebarProps {
                       isActive={chat.id === currentChatId}
                       asChild
                     >
-                      <Link href={`/projects/${project.id}/chats/${chat.id}`}>
-                        <MessageSquareIcon /> {chat.title}
+                      <Link 
+                        href={`/projects/${project.id}/chats/${chat.id}`}
+                        aria-current={chat.id === currentChatId ? "page" : undefined}
+                      >
+                        <MessageSquareIcon aria-hidden="true" /> {chat.title}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -215,6 +231,10 @@ interface AppSidebarProps {
   </Sidebar>
 </SidebarProvider>
 ```
+
+**WCAG 2.2 AA Accessibility Requirements** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+All decorative icons (folder, chevron, message square) MUST have `aria-hidden="true"` to prevent redundant announcements to screen readers. CollapsibleTrigger MUST expose `aria-expanded` state via Radix component (handled automatically). Active chat links MUST have `aria-current="page"` to indicate current page state. CollapsibleContent MUST have an `id` that matches the trigger's `aria-controls` for proper ARIA relationship.
 
 ---
 
@@ -268,10 +288,10 @@ export function ChatArea() {
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1 px-4">
-        <div className="max-w-3xl mx-auto py-4 space-y-4">
+        <div id="main-content" className="max-w-3xl mx-auto py-4 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <MessageSquareIcon className="size-12 mb-4" />
+              <MessageSquareIcon className="size-12 mb-4" aria-hidden="true" />
               <p>Escribe tu primer mensaje para comenzar la consultoría</p>
             </div>
           )}
@@ -290,7 +310,12 @@ export function ChatArea() {
       </div>
 
       {error && (
-        <div className="p-2 text-sm text-destructive text-center">
+        <div 
+          role="status" 
+          aria-live="polite" 
+          aria-atomic="true"
+          className="px-4 py-2 text-sm text-destructive bg-destructive/10 text-center"
+        >
           Error: {error.message}
         </div>
       )}
@@ -308,6 +333,10 @@ export function ChatArea() {
 | `error` | Habilitado | Mensaje de error |
 
 **Chat efímero:** `useChat` mantiene `messages` en estado React. Al navegar a otro chat, el componente se desmonta y los mensajes se pierden. ✅
+
+**WCAG 2.2 AA Accessibility Requirements** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+The main content wrapper MUST have `id="main-content"` to serve as the skip link target. Empty state icon MUST have `aria-hidden="true"`. Error messages MUST use `role="status"` + `aria-live="polite"` + `aria-atomic="true"` to announce errors to screen readers. Auto-scroll behavior MUST check `prefers-reduced-motion` media query before applying smooth scrolling (instant scroll if reduced motion is enabled).
 
 ---
 
@@ -330,6 +359,11 @@ interface MessageBubbleProps {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+const MarkdownImage = (props: any) => {
+  const alt = props.alt && props.alt.trim() ? props.alt : "Imagen generada por el asistente";
+  return <img {...props} alt={alt} className="max-w-full rounded" />;
+};
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
@@ -349,7 +383,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               return isUser ? (
                 <p key={i} className="whitespace-pre-wrap">{part.text}</p>
               ) : (
-                <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown 
+                  key={i} 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    img: MarkdownImage,
+                  }}
+                >
                   {part.text}
                 </ReactMarkdown>
               );
@@ -364,6 +404,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 ```
 
 **Nota:** Por ahora solo manejamos `part.type === "text"`. En fases futuras se agregarán partes `tool-*`, `reasoning`, etc.
+
+**WCAG 2.2 AA Accessibility Requirements** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+MessageBubble MUST provide a custom ReactMarkdown image component that applies a fallback alt text when images lack alt attributes. Fallback text: "Imagen generada por el asistente". This ensures all images have descriptive alt text for screen readers, whether provided in markdown or auto-generated. Bot icon MUST have `aria-hidden="true"`.
 
 ---
 
@@ -390,15 +434,33 @@ interface ChatInputProps {
 - Botón muestra `Send` cuando `status === "ready"`
 
 ```tsx
+<label htmlFor="chat-input" className="sr-only">
+  Escribe tu mensaje (Shift+Enter para nueva línea)
+</label>
 <Input
+  id="chat-input"
   placeholder="Escribe tu mensaje..."
   disabled={disabled}
   // ... onChange, onKeyDown
 />
 <Button size="icon" disabled={disabled || !value.trim()}>
-  {disabled ? <Loader2 className="animate-spin" /> : <Send />}
+  {disabled ? (
+    <>
+      <Loader2 className="animate-spin size-4" aria-hidden="true" />
+      <span className="sr-only">Enviando...</span>
+    </>
+  ) : (
+    <>
+      <Send className="size-4" aria-hidden="true" />
+      <span className="sr-only">Enviar mensaje</span>
+    </>
+  )}
 </Button>
 ```
+
+**WCAG 2.2 AA Accessibility Requirements** *(Merged from change: accessibility-wcag-2.2-fixes, date: 2026-06-10)*
+
+Input MUST have an associated `<label>` with `htmlFor="chat-input"` and class `sr-only`. Label text MUST include keyboard shortcut hint: "Shift+Enter para nueva línea". Send button icon (Loader2, Send) MUST have `aria-hidden="true"`. Button text MUST be provided via `.sr-only` span: "Enviando..." (loading state) or "Enviar mensaje" (ready state). Disabled state contrast MUST meet ≥3:1 ratio via `disabled:opacity-70` CSS class.
 
 ---
 

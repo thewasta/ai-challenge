@@ -22,7 +22,7 @@ export function HomePageClient() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <Zap className="size-16 text-primary mb-6" />
+      <Zap aria-hidden="true" className="mb-6 size-16 text-primary" />
       <h1 className="text-4xl font-bold text-primary text-center">
         Consultor SEO & Marketing Digital
       </h1>
@@ -30,7 +30,11 @@ export function HomePageClient() {
         Plataforma de consultoría multi-agente impulsada por IA
       </p>
       <Button size="lg" className="mt-8" onClick={handleCreate} disabled={isLoading}>
-        {isLoading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+        {isLoading ? (
+          <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
+        ) : (
+          <Plus aria-hidden="true" data-icon="inline-start" />
+        )}
         Crear primer proyecto
       </Button>
     </main>

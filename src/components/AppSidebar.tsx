@@ -35,7 +35,7 @@ export function AppSidebar({ projects, currentProjectId, currentChatId }: AppSid
               size="lg"
               render={
                 <Link href="/">
-                  <Zap className="size-5 text-primary" />
+                  <Zap aria-hidden="true" className="size-5 text-primary" />
                   <span className="font-semibold">Consultor SEO</span>
                 </Link>
               }
@@ -55,45 +55,55 @@ export function AppSidebar({ projects, currentProjectId, currentChatId }: AppSid
 
         <SidebarSeparator />
 
-        {projects.map((project) => (
-          <SidebarGroup key={project.id}>
-            <Collapsible
-              defaultOpen={project.id === currentProjectId}
-              className="group/collapsible"
-            >
-              <SidebarGroupLabel
-                render={
-                  <CollapsibleTrigger className="w-full cursor-pointer flex items-center gap-2">
-                    <Folder className="size-4" />
-                    <span className="flex-1 text-left truncate">{project.name}</span>
-                    <ChevronDown className="size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                  </CollapsibleTrigger>
-                }
-              />
+        {projects.map((project) => {
+          const chatsPanelId = `project-${project.id}-chats`;
 
-              <CollapsibleContent>
-                <SidebarMenu>
-                  {project.chats.map((chat) => (
-                    <SidebarMenuItem key={chat.id}>
-                      <SidebarMenuButton
-                        isActive={chat.id === currentChatId && project.id === currentProjectId}
-                        render={
-                          <Link href={`/projects/${project.id}/chats/${chat.id}`}>
-                            <MessageSquare className="size-4" />
-                            <span>{chat.title}</span>
-                          </Link>
-                        }
+          return (
+            <SidebarGroup key={project.id}>
+              <Collapsible
+                defaultOpen={project.id === currentProjectId}
+                className="group/collapsible"
+              >
+                <SidebarGroupLabel
+                  render={
+                    <CollapsibleTrigger
+                      aria-controls={chatsPanelId}
+                      className="flex w-full cursor-pointer items-center gap-2"
+                    >
+                      <Folder aria-hidden="true" className="size-4" />
+                      <span className="flex-1 truncate text-left">{project.name}</span>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180"
                       />
+                    </CollapsibleTrigger>
+                  }
+                />
+
+                <CollapsibleContent id={chatsPanelId}>
+                  <SidebarMenu>
+                    {project.chats.map((chat) => (
+                      <SidebarMenuItem key={chat.id}>
+                        <SidebarMenuButton
+                          isActive={chat.id === currentChatId && project.id === currentProjectId}
+                          render={
+                            <Link href={`/projects/${project.id}/chats/${chat.id}`}>
+                              <MessageSquare aria-hidden="true" className="size-4" />
+                              <span>{chat.title}</span>
+                            </Link>
+                          }
+                        />
+                      </SidebarMenuItem>
+                    ))}
+                    <SidebarMenuItem>
+                      <NewChatButton projectId={project.id} />
                     </SidebarMenuItem>
-                  ))}
-                  <SidebarMenuItem>
-                    <NewChatButton projectId={project.id} />
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        ))}
+                  </SidebarMenu>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter>
