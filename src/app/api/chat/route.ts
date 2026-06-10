@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 import { createAgentUIStreamResponse, createIdGenerator, type InferAgentUIMessage } from "ai";
-import { orchestratorAgent, subAgent } from "@/agents/tools";
+import { dataforseoAgent, orchestratorAgent, subAgent } from "@/agents/tools";
 import { getMessagesByChat, saveMessage } from "@/lib/db-helpers";
 
 export const maxDuration = 60;
@@ -34,6 +34,27 @@ export async function POST(req: Request) {
   // instructions. We intercept [DELEGATE] before it reaches the LLM and call
   // the sub-agent directly for a robust, deterministic delegation path.
   const lastUserText = getLastUserText(allMessages);
+
+  const dataforseoMatch = /^\[delegate:dataforseo\]\s*/i.exec(lastUserText.trim());
+  if (dataforseoMatch) {
+    const task = lastUserText.trim().slice(dataforseoMatch[0].length);
+
+    const result = await dataforseoAgent.stream({
+      prompt:
+        task || "Analiza la palabra clave más genérica del nicho y genera un plan SEO básico.",
+    });
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: allMessages,
+      generateMessageId: generateId,
+      onFinish: async ({ messages: finalMessages }) => {
+        for (const msg of finalMessages) {
+          await saveMessage(chatId, msg);
+        }
+      },
+    });
+  }
+
   const delegateMatch = /^\[delegate\]\s*/i.exec(lastUserText.trim());
 
   if (delegateMatch) {
