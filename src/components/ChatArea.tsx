@@ -6,6 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AgentStatusBanner } from "./AgentStatusBanner";
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
 
@@ -13,17 +14,36 @@ interface ChatAreaProps {
   chatId: number;
 }
 
+// Derive current agent activity from the last assistant message's parts
+function deriveActivity(messages: UIMessage[]): string | null {
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage || lastMessage.role !== "assistant") return null;
+
+  for (const part of lastMessage.parts) {
+    if (part.type === "tool-load_skill") {
+      if (part.state === "input-available" || part.state === "output-available") {
+        const skillName = (part as { input: { skillName: string } }).input.skillName;
+        return `Usando herramienta: load_skill (${skillName})...`;
+      }
+    }
+    if (part.type === "tool-delegate_to_subagent") {
+      if (part.state === "input-available") {
+        return "Delegando a sub-agente...";
+      }
+    }
+  }
+  return null;
+}
+
 export function ChatArea({ chatId }: ChatAreaProps) {
-  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Persistence is handled server-side by the /api/chat route.
   // The client only sends the last message; the server loads history,
   // streams the response, and saves everything via onFinish.
-  const { messages, status, sendMessage, error } = useChat({
+  const { messages, status, sendMessage, error, setMessages } = useChat({
     id: String(chatId),
-    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
       // Only send the last message + chat id to the server.
@@ -51,7 +71,7 @@ export function ChatArea({ chatId }: ChatAreaProps) {
           throw new Error(data.error || "Error al cargar el historial");
         }
         const data = (await response.json()) as { messages: UIMessage[] };
-        setInitialMessages(data.messages);
+        setMessages(data.messages);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Error desconocido";
         setLoadError(message);
@@ -61,7 +81,7 @@ export function ChatArea({ chatId }: ChatAreaProps) {
       }
     }
     loadChatHistory();
-  }, [chatId]);
+  }, [chatId, setMessages]);
 
   if (isLoadingHistory) {
     return (
@@ -74,6 +94,7 @@ export function ChatArea({ chatId }: ChatAreaProps) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+      <AgentStatusBanner activity={deriveActivity(messages)} />
       <ScrollArea className="flex-1">
         <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
           {messages.length === 0 && (

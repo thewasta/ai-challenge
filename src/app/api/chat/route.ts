@@ -1,8 +1,20 @@
-import { openai } from "@ai-sdk/openai";
-import { convertToModelMessages, createIdGenerator, streamText, type UIMessage } from "ai";
+import type { UIMessage } from "ai";
+import { createAgentUIStreamResponse, createIdGenerator, type InferAgentUIMessage } from "ai";
+import { orchestratorAgent, subAgent } from "@/agents/tools";
 import { getMessagesByChat, saveMessage } from "@/lib/db-helpers";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+
+/** Extracts the last user text from the messages array */
+function getLastUserText(messages: UIMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const textPart = messages[i].parts.find((p) => p.type === "text");
+    if (messages[i].role === "user" && textPart) {
+      return (textPart as { text: string }).text;
+    }
+  }
+  return "";
+}
 
 export async function POST(req: Request) {
   const { messages, chatId }: { messages: UIMessage[]; chatId: number } = await req.json();
@@ -15,17 +27,42 @@ export async function POST(req: Request) {
   const newMessages = messages.filter((m) => !existingIds.has(m.id));
   const allMessages = [...previousMessages, ...newMessages];
 
-  const result = streamText({
-    model: openai("gpt-4.1-nano"),
-    messages: await convertToModelMessages(allMessages),
-  });
+  const generateId = createIdGenerator({ prefix: "msg", size: 16 });
 
-  return result.toUIMessageStreamResponse({
-    originalMessages: allMessages,
-    // Server-side ID generation for persistence consistency
-    generateMessageId: createIdGenerator({ prefix: "msg", size: 16 }),
+  // ── [DELEGATE] pre-processing ──
+  // gpt-4.1-nano is a small model that doesn't reliably follow tool-calling
+  // instructions. We intercept [DELEGATE] before it reaches the LLM and call
+  // the sub-agent directly for a robust, deterministic delegation path.
+  const lastUserText = getLastUserText(allMessages);
+  const delegateMatch = /^\[delegate\]\s*/i.exec(lastUserText.trim());
+
+  if (delegateMatch) {
+    const task = lastUserText.trim().slice(delegateMatch[0].length);
+
+    const result = await subAgent.stream({
+      prompt: task || "Responde al saludo del usuario de manera amable.",
+    });
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: allMessages,
+      generateMessageId: generateId,
+      onFinish: async ({ messages: finalMessages }) => {
+        for (const msg of finalMessages) {
+          await saveMessage(chatId, msg);
+        }
+      },
+    });
+  }
+
+  // ── Normal orchestration path ──
+  const typedMessages = allMessages as InferAgentUIMessage<typeof orchestratorAgent>[];
+
+  return createAgentUIStreamResponse({
+    agent: orchestratorAgent,
+    uiMessages: typedMessages,
+    originalMessages: typedMessages,
+    generateMessageId: generateId,
     onFinish: async ({ messages: finalMessages }) => {
-      // Persist ALL messages server-side (UPSERT by message.id ensures idempotency)
       for (const msg of finalMessages) {
         await saveMessage(chatId, msg);
       }

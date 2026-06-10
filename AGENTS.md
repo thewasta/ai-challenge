@@ -5,6 +5,8 @@ Este documento define las directrices operativas y el protocolo de trabajo para 
 ## 1. Filosofía de Desarrollo
 * **Pragmatismo MVP:** Prioriza la funcionalidad entregable sobre la sobreingeniería. Si una funcionalidad no es crítica para el MVP (ver sección `Non-Goals` del PRD), no se implementa.
 * **Flujo SDD (Software Development Driven):** Toda tarea debe seguir estrictamente las fases SDD (explore->proposal->spec/design->task->apply->verify->archive):
+* **No incluir comentarios ambiguos:** Evita líneas y bloques de comentarios que no aporten valor. El nombre las variables/constantes/métodos si lo hemos hecho bien deben de comunicar por sí mismos su tarea.
+* **Consultar documentación antes de propuesta:** Prioriza la documentación de los paquetes de IA como `node_modules/ai/docs` antes de proceder con la propuesta.
 
 ## 2. Instrucciones Técnicas y Gestión de Dependencias
 * **Gestor de Paquetes:** Es obligatorio el uso de `pnpm` para todas las operaciones (instalación, ejecución de scripts, etc.).

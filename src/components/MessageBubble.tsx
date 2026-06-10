@@ -52,6 +52,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               </div>
             );
           }
+          if (part.type === "tool-load_skill" || part.type === "tool-delegate_to_subagent") {
+            // Tool parts are handled visually by AgentStatusBanner.
+            // We render nothing inline to avoid clutter.
+            return null;
+          }
           return null;
         })}
       </div>
