@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
 import { MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgentStatusBanner } from "./AgentStatusBanner";
 import { ChatInput } from "./ChatInput";
@@ -17,7 +17,7 @@ interface ChatAreaProps {
 // Derive current agent activity from the last assistant message's parts
 function deriveActivity(messages: UIMessage[]): string | null {
   const lastMessage = messages[messages.length - 1];
-  if (!lastMessage || lastMessage.role !== "assistant") return null;
+  if (lastMessage?.role !== "assistant") return null;
 
   for (const part of lastMessage.parts) {
     if (part.type === "tool-load_skill") {
@@ -38,6 +38,7 @@ function deriveActivity(messages: UIMessage[]): string | null {
 export function ChatArea({ chatId }: ChatAreaProps) {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Persistence is handled server-side by the /api/chat route.
   // The client only sends the last message; the server loads history,
@@ -83,9 +84,15 @@ export function ChatArea({ chatId }: ChatAreaProps) {
     loadChatHistory();
   }, [chatId, setMessages]);
 
+  // Auto-scroll to bottom when new messages arrive.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must react to every message change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   if (isLoadingHistory) {
     return (
-      <div className="flex flex-col h-[calc(100vh-3.5rem)] items-center justify-center">
+      <div className="flex flex-col h-full items-center justify-center">
         <MessageSquare className="size-12 mb-4 stroke-1 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Cargando historial...</p>
       </div>
@@ -93,9 +100,9 @@ export function ChatArea({ chatId }: ChatAreaProps) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-full">
       <AgentStatusBanner activity={deriveActivity(messages)} />
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -107,10 +114,11 @@ export function ChatArea({ chatId }: ChatAreaProps) {
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
+          <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
-      <div className="border-t bg-background p-4">
+      <div className="border-t bg-background p-4 shrink-0">
         <ChatInput
           onSend={(text) => sendMessage({ text })}
           disabled={status !== "ready"}
