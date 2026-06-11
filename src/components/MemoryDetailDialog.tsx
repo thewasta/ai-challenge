@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock, FolderOpen, Tag } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MemoryDetailDialogProps {
   children: React.ReactElement;
@@ -64,6 +64,7 @@ export function MemoryDetailDialog({
 
         <DialogFooter>
           <button
+            aria-label={`Eliminar memoria: ${title}`}
             type="button"
             className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             onClick={onDeleteRequest}

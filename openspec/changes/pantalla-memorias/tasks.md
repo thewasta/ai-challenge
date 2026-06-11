@@ -26,7 +26,7 @@ Chain strategy: single-pr
 - [x] Task 4: Create ProjectsGridPage Route
 - [x] Task 5: Create MemoryCard and MemoryDetailDialog Components
 - [x] Task 6: Create Memory List Page and Delete Server Action
-- [ ] Task 7: Accessibility Audit and Final Polish
+- [x] Task 7: Accessibility Audit and Final Polish
 
 ---
 

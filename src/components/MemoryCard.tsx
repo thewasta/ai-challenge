@@ -2,6 +2,7 @@
 
 import { CalendarClock, Tag, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { MemoryDetailDialog } from "@/components/MemoryDetailDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +17,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MemoryDetailDialog } from "@/components/MemoryDetailDialog";
 
 export interface MemoryCardItem {
   id: number;
@@ -70,7 +70,9 @@ export function MemoryCard({ memory, onDelete, projectName }: MemoryCardProps) {
       setIsDeleteDialogOpen(false);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "No se pudo eliminar la memoria. Intentá de nuevo.",
+        error instanceof Error
+          ? error.message
+          : "No se pudo eliminar la memoria. Intentá de nuevo.",
       );
     } finally {
       setIsDeleting(false);
@@ -122,6 +124,7 @@ export function MemoryCard({ memory, onDelete, projectName }: MemoryCardProps) {
               topicLabel={memory.topicLabel}
             >
               <button
+                aria-label={`Abrir detalle de la memoria: ${memory.title}`}
                 type="button"
                 className="flex w-full min-h-11 rounded-lg border border-border/70 bg-background p-4 text-left text-sm leading-6 text-muted-foreground transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 onKeyDown={(event) => {
