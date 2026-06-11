@@ -15,6 +15,7 @@ REGLA DE ORO: NO hagas todas las preguntas de golpe. Guía al usuario paso a pas
 
 Paso 1: Visión General del Producto
 - Nombre del proyecto/marca.
+- URL del sitio web de la empresa.
 - Descripción en una línea (One-liner).
 - ¿Qué hace exactamente? (2-3 frases).
 - Categoría del producto y modelo de negocio/precios.
@@ -48,6 +49,7 @@ Una vez recopilada la información de los 4 pasos, debes:
 
 ## 1. Visión General del Producto
 **Nombre:** [Nombre]
+**Sitio Web:** [URL del sitio web]
 **One-liner:** [Descripción de una línea]
 **Qué hace:** [Descripción corta]
 **Categoría y Modelo:** [Categoría y Pricing]
