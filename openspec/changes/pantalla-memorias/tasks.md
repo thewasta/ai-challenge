@@ -24,7 +24,7 @@ Chain strategy: single-pr
 - [x] Task 2: Create Database Helper Functions
 - [x] Task 3: Create ProjectCard Component
 - [x] Task 4: Create ProjectsGridPage Route
-- [ ] Task 5: Create MemoryCard and MemoryDetailDialog Components
+- [x] Task 5: Create MemoryCard and MemoryDetailDialog Components
 - [ ] Task 6: Create Memory List Page and Delete Server Action
 - [ ] Task 7: Accessibility Audit and Final Polish
 
