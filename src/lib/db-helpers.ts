@@ -1,7 +1,15 @@
 import type { UIMessage } from "ai";
 import { desc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { chats, messages, projects } from "@/db/schema";
+import { db, sqlite } from "@/db";
+import {
+  chats,
+  type MemoryScope,
+  type MemorySearchResult,
+  type MemoryTopic,
+  memories,
+  messages,
+  projects,
+} from "@/db/schema";
 
 export interface ChatRow {
   id: number;
@@ -14,6 +22,7 @@ export interface ProjectWithChats {
   id: number;
   name: string;
   description: string;
+  websiteUrl: string;
   chats: ChatRow[];
 }
 
@@ -47,6 +56,7 @@ export async function getProjectsWithChats(): Promise<ProjectWithChats[]> {
       id: project.id,
       name: project.name,
       description: project.description,
+      websiteUrl: project.websiteUrl,
       chats: projectChats,
     });
   }
@@ -177,4 +187,103 @@ export async function saveMessage(chatId: number, message: UIMessage): Promise<b
     console.error("Error saving message:", error);
     return false;
   }
+}
+
+export interface InsertMemoryInput {
+  projectId: number;
+  title: string;
+  topic: MemoryTopic;
+  scope: MemoryScope;
+  content: string;
+}
+
+interface RawMemorySearchRow {
+  id: number;
+  title: string;
+  topic: MemoryTopic;
+  scope: MemoryScope;
+  snippet: string;
+  createdAt: number;
+  rank: number;
+}
+
+const DEFAULT_MEMORY_SEARCH_LIMIT = 10;
+
+function sanitizeFTSQuery(query: string): string | null {
+  const tokens = Array.from(query.matchAll(/"([^"]+)"|(\S+)/g), (match) =>
+    (match[1] ?? match[2] ?? "")
+      .replace(/[(){}[\]^:*+-]/g, " ")
+      .replace(/"/g, '""')
+      .replace(/\s+/g, " ")
+      .trim(),
+  ).filter(Boolean);
+
+  if (tokens.length === 0) {
+    return null;
+  }
+
+  return tokens.map((token) => `"${token}"`).join(" ");
+}
+
+export async function insertMemory({
+  projectId,
+  title,
+  topic,
+  scope,
+  content,
+}: InsertMemoryInput): Promise<number> {
+  const [insertedMemory] = await db
+    .insert(memories)
+    .values({
+      projectId,
+      title,
+      topic,
+      scope,
+      content,
+      createdAt: new Date(),
+    })
+    .returning({ id: memories.id });
+
+  return insertedMemory.id;
+}
+
+export function searchMemoriesFTS(
+  projectId: number,
+  query: string,
+  limit = DEFAULT_MEMORY_SEARCH_LIMIT,
+): MemorySearchResult[] {
+  const sanitizedQuery = sanitizeFTSQuery(query);
+
+  if (!sanitizedQuery) {
+    return [];
+  }
+
+  const statement = sqlite.prepare(`
+    SELECT
+      m.id,
+      m.title,
+      m.topic,
+      m.scope,
+      substr(replace(replace(m.content, char(10), ' '), char(13), ' '), 1, 200) AS snippet,
+      m.created_at AS createdAt,
+      bm25(memories_fts) AS rank
+    FROM memories_fts
+    INNER JOIN memories m ON memories_fts.rowid = m.id
+    WHERE memories_fts MATCH ?
+      AND m.project_id = ?
+    ORDER BY rank
+    LIMIT ?
+  `);
+
+  const rows = statement.all(sanitizedQuery, projectId, limit) as RawMemorySearchRow[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    topic: row.topic,
+    scope: row.scope,
+    snippet: row.snippet,
+    createdAt: new Date(row.createdAt),
+    rank: row.rank,
+  }));
 }

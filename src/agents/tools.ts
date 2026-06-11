@@ -2,14 +2,11 @@ import { openai } from "@ai-sdk/openai";
 import { ToolLoopAgent, tool } from "ai";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import {
-  COPYWRITER_PROMPT,
-  DATAFORSEO_PROMPT,
-  ORCHESTRATOR_PROMPT,
-  SUB_AGENT_PROMPT,
-} from "@/agents/prompts";
+import { MEMORY_TEMPLATE, validateMemoryContent } from "@/agents/memory-template";
+import { COPYWRITER_PROMPT, DATAFORSEO_PROMPT, ORCHESTRATOR_PROMPT } from "@/agents/prompts";
 import { db } from "@/db";
-import { projects } from "@/db/schema";
+import { memoryScopes, memoryTopics, projects } from "@/db/schema";
+import { insertMemory, searchMemoriesFTS } from "@/lib/db-helpers";
 import { SKILLS } from "@/skills";
 
 type SearchIntent = "Informational" | "Navigational" | "Commercial" | "Transactional";
@@ -47,6 +44,25 @@ interface KeywordIntent {
 interface KeywordIdea {
   seed_keyword: string;
   ideas: string[];
+}
+
+export interface SaveMemorySuccessResult {
+  success: true;
+  memoryId: number;
+  message: string;
+}
+
+export interface SaveMemoryErrorResult {
+  success: false;
+  error: string;
+  missingSections?: string[];
+}
+
+export type SaveMemoryToolResult = SaveMemorySuccessResult | SaveMemoryErrorResult;
+
+export interface SearchMemoryToolResult {
+  results: ReturnType<typeof searchMemoriesFTS>;
+  message?: string;
 }
 
 const INTENT_KEYWORDS: Record<SearchIntent, string[]> = {
@@ -290,12 +306,8 @@ export const delegateToSubagentTool = tool({
   }),
   execute: async ({ target, task }, { abortSignal }) => {
     const agent =
-      target === "dataforseo"
-        ? dataforseoAgent
-        : target === "copywriter"
-          ? copywriterAgent
-          : null;
-          
+      target === "dataforseo" ? dataforseoAgent : target === "copywriter" ? copywriterAgent : null;
+
     if (!agent) {
       return `Error: Invalid target "${target}". Valid targets are "dataforseo" and "copywriter".`;
     }
@@ -312,7 +324,7 @@ export const delegateToSubagentTool = tool({
 function createGetProjectOverviewTool(projectId: number) {
   return tool({
     description:
-      "Gets the current project context including name, description, buyer persona, competitors, and brand context.",
+      "Gets the current project context including name, description, website URL, buyer persona, competitors, and brand context.",
     inputSchema: z.object({}),
     execute: async () => {
       const project = await db.query.projects.findFirst({
@@ -325,6 +337,7 @@ function createGetProjectOverviewTool(projectId: number) {
         id: project.id,
         name: project.name,
         description: project.description,
+        websiteUrl: project.websiteUrl,
         buyerPersona: project.buyerPersona,
         competitors: project.competitors,
         brandContext: project.brandContext,
@@ -341,6 +354,7 @@ function createSetProjectOverviewTool(projectId: number) {
     inputSchema: z.object({
       name: z.string().optional().describe("Project/brand name"),
       description: z.string().optional().describe("Brief product or brand description"),
+      websiteUrl: z.string().optional().describe("Company website URL"),
       buyerPersona: z.string().optional().describe("Target buyer persona description"),
       competitors: z.string().optional().describe("Main competitors list"),
       brandContext: z.string().optional().describe("Additional brand context as a JSON string"),
@@ -350,6 +364,7 @@ function createSetProjectOverviewTool(projectId: number) {
 
       if (input.name !== undefined) updateData.name = input.name;
       if (input.description !== undefined) updateData.description = input.description;
+      if (input.websiteUrl !== undefined) updateData.websiteUrl = input.websiteUrl;
       if (input.buyerPersona !== undefined) updateData.buyerPersona = input.buyerPersona;
       if (input.competitors !== undefined) updateData.competitors = input.competitors;
       if (input.brandContext !== undefined) updateData.brandContext = input.brandContext;
@@ -359,6 +374,64 @@ function createSetProjectOverviewTool(projectId: number) {
       await db.update(projects).set(updateData).where(eq(projects.id, projectId));
 
       return "Project context updated successfully.";
+    },
+  });
+}
+
+function createSaveMemoryTool(projectId: number) {
+  return tool({
+    description: `Saves a structured memory for the active project. The content must follow this Markdown template:\n\n${MEMORY_TEMPLATE}`,
+    inputSchema: z.object({
+      title: z.string().min(3).max(150),
+      topic: z.enum(memoryTopics),
+      scope: z.enum(memoryScopes).default("project"),
+      content: z.string().min(50).max(5000),
+    }),
+    execute: async ({ title, topic, scope, content }): Promise<SaveMemoryToolResult> => {
+      const validation = validateMemoryContent(content);
+
+      if (!validation.valid) {
+        return {
+          success: false,
+          error: `Missing sections: ${validation.missingSections.join(", ")}`,
+          missingSections: validation.missingSections,
+        };
+      }
+
+      const memoryId = await insertMemory({
+        projectId,
+        title,
+        topic,
+        scope,
+        content,
+      });
+
+      return {
+        success: true,
+        memoryId,
+        message: "Memory saved",
+      };
+    },
+  });
+}
+
+function createSearchMemoryTool(projectId: number) {
+  return tool({
+    description: "Searches project memories using SQLite FTS5 and returns ranked results.",
+    inputSchema: z.object({
+      query: z.string().min(1).max(200),
+    }),
+    execute: async ({ query }): Promise<SearchMemoryToolResult> => {
+      const results = searchMemoriesFTS(projectId, query);
+
+      if (results.length === 0) {
+        return {
+          results: [],
+          message: "No memories found",
+        };
+      }
+
+      return { results };
     },
   });
 }
@@ -373,6 +446,8 @@ export function createOrchestratorAgent(projectId: number) {
       delegate_to_subagent: delegateToSubagentTool,
       get_project_overview: createGetProjectOverviewTool(projectId),
       set_project_overview: createSetProjectOverviewTool(projectId),
+      save_memory: createSaveMemoryTool(projectId),
+      search_memory: createSearchMemoryTool(projectId),
     },
   });
 }
