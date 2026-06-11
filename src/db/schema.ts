@@ -100,7 +100,7 @@ export interface MemorySearchResult {
   title: string;
   topic: MemoryTopic;
   scope: MemoryScope;
-  snippet: string;
+  content: string;
   createdAt: Date;
   rank: number;
 }

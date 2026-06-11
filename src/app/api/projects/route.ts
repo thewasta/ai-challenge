@@ -24,6 +24,7 @@ export async function POST() {
       description: "",
       buyerPersona: "",
       competitors: "",
+      websiteUrl: "",
       brandContext: "{}",
     })
     .returning();
