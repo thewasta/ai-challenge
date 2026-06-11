@@ -1,7 +1,8 @@
 import type { UIMessage } from "ai";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq, max, notLike } from "drizzle-orm";
 import { db, sqlite } from "@/db";
 import {
+  type Memory,
   chats,
   type MemoryScope,
   type MemorySearchResult,
@@ -197,17 +198,31 @@ export interface InsertMemoryInput {
   content: string;
 }
 
+export interface ProjectMemorySummary {
+  id: number;
+  name: string;
+  memoryCount: number;
+  latestMemoryCreatedAt: Date;
+}
+
 interface RawMemorySearchRow {
   id: number;
   title: string;
   topic: MemoryTopic;
   scope: MemoryScope;
-  snippet: string;
+  content: string;
   createdAt: number;
   rank: number;
 }
 
 const DEFAULT_MEMORY_SEARCH_LIMIT = 10;
+
+const FTS_STOP_WORDS = new Set([
+  "a", "al", "ante", "con", "contra", "de", "del", "desde", "el", "en", "entre",
+  "hacia", "hasta", "la", "las", "lo", "los", "para", "por", "que", "se", "sin",
+  "sobre", "su", "sus", "un", "una", "unos", "unas", "y", "o", "u", "es", "son",
+  "nos", "estamos", "vamos", "pensar", "tipo", "como", "este", "esta", "esto",
+]);
 
 function sanitizeFTSQuery(query: string): string | null {
   const tokens = Array.from(query.matchAll(/"([^"]+)"|(\S+)/g), (match) =>
@@ -215,14 +230,16 @@ function sanitizeFTSQuery(query: string): string | null {
       .replace(/[(){}[\]^:*+-]/g, " ")
       .replace(/"/g, '""')
       .replace(/\s+/g, " ")
-      .trim(),
-  ).filter(Boolean);
+      .trim()
+      .toLowerCase(),
+  )
+    .filter((token) => token.length >= 3 && !FTS_STOP_WORDS.has(token));
 
-  if (tokens.length === 0) {
-    return null;
-  }
+  const unique = [...new Set(tokens)];
+  if (unique.length === 0) return null;
 
-  return tokens.map((token) => `"${token}"`).join(" ");
+
+  return unique.map((token) => `"${token}"`).join(" OR ");
 }
 
 export async function insertMemory({
@@ -247,12 +264,81 @@ export async function insertMemory({
   return insertedMemory.id;
 }
 
+export async function getProjectsWithMemoryCount(): Promise<ProjectMemorySummary[]> {
+  const latestMemoryCreatedAt = max(memories.createdAt);
+
+  const rows = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      memoryCount: count(memories.id),
+      latestMemoryCreatedAt,
+    })
+    .from(projects)
+    .innerJoin(memories, eq(memories.projectId, projects.id))
+    .where(notLike(projects.name, "Proyecto #%"))
+    .groupBy(projects.id, projects.name)
+    .orderBy(desc(latestMemoryCreatedAt));
+
+  return rows.flatMap((row) => {
+    if (!row.latestMemoryCreatedAt) {
+      return [];
+    }
+
+    return [
+      {
+        id: row.id,
+        name: row.name,
+        memoryCount: row.memoryCount,
+        latestMemoryCreatedAt: row.latestMemoryCreatedAt,
+      },
+    ];
+  });
+}
+
+export async function getMemoriesForProject(projectId: number): Promise<Memory[]> {
+  return db
+    .select()
+    .from(memories)
+    .where(eq(memories.projectId, projectId))
+    .orderBy(desc(memories.createdAt));
+}
+
+export const getMemoriesByProject = getMemoriesForProject;
+
+export async function deleteMemory(id: number): Promise<void> {
+  await db.delete(memories).where(eq(memories.id, id));
+}
+
+export interface ProjectProfileLike {
+  description: string;
+  websiteUrl: string;
+  buyerPersona: string;
+  competitors: string;
+}
+
+export function isProjectProfileComplete(
+  project: ProjectProfileLike | null | undefined,
+): boolean {
+  if (!project) return false;
+
+  return (
+    (project.description ?? "").trim().length > 0 &&
+    (project.websiteUrl ?? "").trim().length > 0 &&
+    (project.buyerPersona ?? "").trim().length > 0 &&
+    (project.competitors ?? "").trim().length > 0
+  );
+}
+
+
 export function searchMemoriesFTS(
   projectId: number,
   query: string,
   limit = DEFAULT_MEMORY_SEARCH_LIMIT,
 ): MemorySearchResult[] {
   const sanitizedQuery = sanitizeFTSQuery(query);
+
+  console.log("Sanitized FTS query:", sanitizedQuery);
 
   if (!sanitizedQuery) {
     return [];
@@ -264,7 +350,7 @@ export function searchMemoriesFTS(
       m.title,
       m.topic,
       m.scope,
-      substr(replace(replace(m.content, char(10), ' '), char(13), ' '), 1, 200) AS snippet,
+      m.content AS content,
       m.created_at AS createdAt,
       bm25(memories_fts) AS rank
     FROM memories_fts
@@ -277,12 +363,14 @@ export function searchMemoriesFTS(
 
   const rows = statement.all(sanitizedQuery, projectId, limit) as RawMemorySearchRow[];
 
+  console.log(`FTS search for "${query}" returned ${rows.length} results.`);
+
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
     topic: row.topic,
     scope: row.scope,
-    snippet: row.snippet,
+    content: row.content,
     createdAt: new Date(row.createdAt),
     rank: row.rank,
   }));

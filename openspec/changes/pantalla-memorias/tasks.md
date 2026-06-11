@@ -21,7 +21,7 @@ Chain strategy: single-pr
 ## Progress Checklist
 
 - [x] Task 1: Set Up Sidebar Navigation Button
-- [ ] Task 2: Create Database Helper Functions
+- [x] Task 2: Create Database Helper Functions
 - [ ] Task 3: Create ProjectCard Component
 - [ ] Task 4: Create ProjectsGridPage Route
 - [ ] Task 5: Create MemoryCard and MemoryDetailDialog Components
