@@ -22,7 +22,7 @@ Chain strategy: single-pr
 
 - [x] Task 1: Set Up Sidebar Navigation Button
 - [x] Task 2: Create Database Helper Functions
-- [ ] Task 3: Create ProjectCard Component
+- [x] Task 3: Create ProjectCard Component
 - [ ] Task 4: Create ProjectsGridPage Route
 - [ ] Task 5: Create MemoryCard and MemoryDetailDialog Components
 - [ ] Task 6: Create Memory List Page and Delete Server Action
