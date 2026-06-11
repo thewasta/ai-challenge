@@ -16,6 +16,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import type { ProjectWithChats } from "@/lib/db-helpers";
+import { MemoriesNavButton } from "./MemoriesNavButton";
 import { NewChatButton } from "./NewChatButton";
 import { NewProjectButton } from "./NewProjectButton";
 
@@ -47,6 +48,9 @@ export function AppSidebar({ projects, currentProjectId, currentChatId }: AppSid
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <MemoriesNavButton />
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <NewProjectButton />
             </SidebarMenuItem>
