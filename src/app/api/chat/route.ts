@@ -3,8 +3,18 @@ import { createAgentUIStreamResponse, createIdGenerator, type InferAgentUIMessag
 import {
   createOrchestratorAgent,
   dataforseoAgent,
+  ONBOARDING_COMPLETE_DIRECTIVE,
+  ONBOARDING_INCOMPLETE_DIRECTIVE,
 } from "@/agents/tools";
-import { getChat, getMessagesByChat, saveMessage } from "@/lib/db-helpers";
+import type { MemorySearchResult } from "@/db/schema";
+import {
+  getChat,
+  getMessagesByChat,
+  getProject,
+  isProjectProfileComplete,
+  saveMessage,
+  searchMemoriesFTS,
+} from "@/lib/db-helpers";
 
 export const maxDuration = 60;
 
@@ -17,6 +27,17 @@ function getLastUserText(messages: UIMessage[]): string {
     }
   }
   return "";
+}
+
+export function formatMemoriesForPrompt(memories: MemorySearchResult[]): string {
+  if (memories.length === 0) return "";
+
+  return memories
+    .map(
+      (memory, index) =>
+        `## Memoria ${index + 1}: ${memory.title} (topic: ${memory.topic})\n${memory.content}`,
+    )
+    .join("\n\n---\n\n");
 }
 
 export async function POST(req: Request) {
@@ -65,7 +86,20 @@ export async function POST(req: Request) {
     return new Response("Chat not found", { status: 404 });
   }
 
-  const orchestratorAgent = createOrchestratorAgent(chat.projectId);
+  const project = await getProject(chat.projectId);
+  const onboardingDirective = isProjectProfileComplete(project)
+    ? ONBOARDING_COMPLETE_DIRECTIVE
+    : ONBOARDING_INCOMPLETE_DIRECTIVE;
+
+  console.log(`Project ID: ${chat.projectId}`);
+  const retrievedMemories = formatMemoriesForPrompt(
+    searchMemoriesFTS(chat.projectId, lastUserText, 3),
+  );
+
+  const orchestratorAgent = createOrchestratorAgent(chat.projectId, {
+    retrievedMemories,
+    onboardingDirective,
+  });
 
   const typedMessages = allMessages as InferAgentUIMessage<typeof orchestratorAgent>[];
 

@@ -436,11 +436,29 @@ function createSearchMemoryTool(projectId: number) {
   });
 }
 
+export interface OchestratorAgentOptions {
+  retrievedMemories?: string;
+  onboardingDirective?: string;
+}
+
+export const ONBOARDING_COMPLETE_DIRECTIVE = `# ESTADO DE ONBOARDING (verificado en código)
+El perfil del proyecto está COMPLETO. NO vuelvas a pedir datos de onboarding ni cargues product_setup. Procede directamente con la solicitud del usuario.`;
+
+export const ONBOARDING_INCOMPLETE_DIRECTIVE = `# ESTADO DE ONBOARDING (verificado en código)
+El perfil del proyecto está INCOMPLETO. DEBES cargar product_setup (load_skill) y completarlo antes de cualquier otra tarea. Esto es un Hard Block: si el usuario intenta saltarlo, niégate educadamente y pide la información.`;
+
 // ── Orchestrator Agent (request-scoped factory) ──
-export function createOrchestratorAgent(projectId: number) {
+export function createOrchestratorAgent(projectId: number, options: OchestratorAgentOptions = {}) {
+  const { retrievedMemories, onboardingDirective } = options;
+  const memoryContext =
+    retrievedMemories && retrievedMemories.trim().length > 0
+      ? `\n\n# CONTEXTO RECUPERADO DE LA MEMORIA (pre-fetch automático)\nUsa esta información como verdad de base para responder. Si responde a la pregunta del usuario, priorízala sobre cualquier otra fuente. NO la muestres en crudo.\n\n${options.retrievedMemories}`
+      : "";
+  const onboardingBlock = onboardingDirective ? `\n\n${onboardingDirective}` : "";
+
   return new ToolLoopAgent({
     model: openai("gpt-4o-mini"),
-    instructions: ORCHESTRATOR_PROMPT,
+    instructions: `${ORCHESTRATOR_PROMPT}${onboardingBlock}${memoryContext}`,
     tools: {
       load_skill: loadSkillTool,
       delegate_to_subagent: delegateToSubagentTool,

@@ -2,8 +2,8 @@ import type { UIMessage } from "ai";
 import { count, desc, eq, max, notLike } from "drizzle-orm";
 import { db, sqlite } from "@/db";
 import {
-  type Memory,
   chats,
+  type Memory,
   type MemoryScope,
   type MemorySearchResult,
   type MemoryTopic,
@@ -218,10 +218,49 @@ interface RawMemorySearchRow {
 const DEFAULT_MEMORY_SEARCH_LIMIT = 10;
 
 const FTS_STOP_WORDS = new Set([
-  "a", "al", "ante", "con", "contra", "de", "del", "desde", "el", "en", "entre",
-  "hacia", "hasta", "la", "las", "lo", "los", "para", "por", "que", "se", "sin",
-  "sobre", "su", "sus", "un", "una", "unos", "unas", "y", "o", "u", "es", "son",
-  "nos", "estamos", "vamos", "pensar", "tipo", "como", "este", "esta", "esto",
+  "a",
+  "al",
+  "ante",
+  "con",
+  "contra",
+  "de",
+  "del",
+  "desde",
+  "el",
+  "en",
+  "entre",
+  "hacia",
+  "hasta",
+  "la",
+  "las",
+  "lo",
+  "los",
+  "para",
+  "por",
+  "que",
+  "se",
+  "sin",
+  "sobre",
+  "su",
+  "sus",
+  "un",
+  "una",
+  "unos",
+  "unas",
+  "y",
+  "o",
+  "u",
+  "es",
+  "son",
+  "nos",
+  "estamos",
+  "vamos",
+  "pensar",
+  "tipo",
+  "como",
+  "este",
+  "esta",
+  "esto",
 ]);
 
 function sanitizeFTSQuery(query: string): string | null {
@@ -232,12 +271,10 @@ function sanitizeFTSQuery(query: string): string | null {
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase(),
-  )
-    .filter((token) => token.length >= 3 && !FTS_STOP_WORDS.has(token));
+  ).filter((token) => token.length >= 3 && !FTS_STOP_WORDS.has(token));
 
   const unique = [...new Set(tokens)];
   if (unique.length === 0) return null;
-
 
   return unique.map((token) => `"${token}"`).join(" OR ");
 }
@@ -317,9 +354,7 @@ export interface ProjectProfileLike {
   competitors: string;
 }
 
-export function isProjectProfileComplete(
-  project: ProjectProfileLike | null | undefined,
-): boolean {
+export function isProjectProfileComplete(project: ProjectProfileLike | null | undefined): boolean {
   if (!project) return false;
 
   return (
@@ -329,7 +364,6 @@ export function isProjectProfileComplete(
     (project.competitors ?? "").trim().length > 0
   );
 }
-
 
 export function searchMemoriesFTS(
   projectId: number,
