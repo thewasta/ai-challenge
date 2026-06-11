@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { Brain, FolderSearch } from "lucide-react";
+import type { Metadata } from "next";
 import { ProjectCard } from "@/components/ProjectCard";
 import {
   Empty,
@@ -13,7 +13,7 @@ import { getProjectsWithMemoryCount } from "@/lib/db-helpers";
 
 export const metadata: Metadata = {
   title: "Memorias — Consultor SEO",
-  description: "Explorá memorias guardadas por proyecto.",
+  description: "Explora memorias guardadas por proyecto.",
 };
 
 export default async function MemoriesPage() {
@@ -24,11 +24,11 @@ export default async function MemoriesPage() {
       <header className="flex flex-col gap-2">
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
           <Brain aria-hidden="true" className="size-4" />
-          Navegá proyectos con memorias persistidas
+          Navega proyectos con memorias persistidas
         </div>
         <h1 className="font-heading text-3xl font-semibold tracking-tight">Memorias</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Revisá el contexto guardado por proyecto y abrí cada memoria para ver el detalle
+          Revisa el contexto guardado por proyecto y visualiza cada memoria para ver el detalle
           completo.
         </p>
       </header>
@@ -41,7 +41,7 @@ export default async function MemoriesPage() {
             </EmptyMedia>
             <EmptyTitle>No hay proyectos con memorias todavía</EmptyTitle>
             <EmptyDescription>
-              Creá un proyecto y guardá contexto para empezar a explorar memorias desde acá.
+              Crea un proyecto y guarda contexto para empezar a explorar memorias desde aquí.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

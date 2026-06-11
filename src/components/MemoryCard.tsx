@@ -34,7 +34,7 @@ interface MemoryCardProps {
   projectName: string;
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-AR", {
+const dateFormatter = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "medium",
   timeStyle: "short",
 });
@@ -72,7 +72,7 @@ export function MemoryCard({ memory, onDelete, projectName }: MemoryCardProps) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "No se pudo eliminar la memoria. Intentá de nuevo.",
+          : "No se pudo eliminar la memoria. Intenta de nuevo.",
       );
     } finally {
       setIsDeleting(false);

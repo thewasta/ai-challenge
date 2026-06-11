@@ -43,11 +43,14 @@ export function ProjectCard({ id, name, memoryCount }: ProjectCardProps) {
                 <FolderOpen aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <h2 id={`project-card-${id}`} className="truncate text-base font-medium leading-snug">
+                <h2
+                  id={`project-card-${id}`}
+                  className="truncate text-base font-medium leading-snug"
+                >
                   {name}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Explorá las memorias guardadas.
+                  Explora las memorias guardadas.
                 </p>
               </div>
             </div>

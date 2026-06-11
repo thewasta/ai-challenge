@@ -1,6 +1,8 @@
 "use client";
 
+import { Brain } from "lucide-react";
 import { useState } from "react";
+import { deleteMemoryAction } from "@/app/memories/actions";
 import { MemoryCard, type MemoryCardItem } from "@/components/MemoryCard";
 import {
   Empty,
@@ -10,8 +12,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { deleteMemoryAction } from "@/app/memories/actions";
-import { Brain } from "lucide-react";
 
 interface ProjectMemoriesListProps {
   initialMemories: MemoryCardItem[];
@@ -52,7 +52,7 @@ export function ProjectMemoriesList({
             </EmptyMedia>
             <EmptyTitle>No hay memorias para este proyecto</EmptyTitle>
             <EmptyDescription>
-              Cuando guardes nuevas memorias en {projectName}, van a aparecer listadas acá.
+              Cuando guardes nuevas memorias en {projectName}, aparecerán listadas aquí.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

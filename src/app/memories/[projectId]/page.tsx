@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
 import { ArrowLeft, Brain } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ProjectMemoriesList } from "@/components/ProjectMemoriesList";
 import { Button } from "@/components/ui/button";
-import { getMemoriesForProject, getProject } from "@/lib/db-helpers";
 import type { MemoryTopic } from "@/db/schema";
+import { getMemoriesForProject, getProject } from "@/lib/db-helpers";
 
 const topicLabels: Record<MemoryTopic, string> = {
   "content-plan": "Plan de contenido",
@@ -48,9 +48,7 @@ export async function generateMetadata({
 
   return {
     title: project ? `${project.name} — Memorias` : "Memorias — Consultor SEO",
-    description: project
-      ? `Memorias guardadas para ${project.name}.`
-      : "Proyecto no encontrado.",
+    description: project ? `Memorias guardadas para ${project.name}.` : "Proyecto no encontrado.",
   };
 }
 
@@ -86,7 +84,7 @@ export default async function ProjectMemoriesPage({
   return (
     <main id="main-content" className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
       <header className="flex flex-col gap-4">
-        <Button render={<Link href="/memories" />} variant="ghost">
+        <Button nativeButton={false} render={<Link href="/memories" />} variant="ghost">
           <ArrowLeft aria-hidden="true" data-icon="inline-start" />
           Volver a proyectos
         </Button>
