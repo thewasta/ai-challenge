@@ -39,7 +39,7 @@ export function MemoryDetailDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Revisá el contenido completo de esta memoria antes de volver al listado.
+            Revisa el contenido completo de esta memoria antes de volver al listado.
           </DialogDescription>
         </DialogHeader>
 
